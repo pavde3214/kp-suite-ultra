@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title or "KP Suite ULTRA" }}</title>
+  <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo">VENT•PRO</span> <span class="subtitle">HVAC / AI-помощник</span></div>
+  <nav>
+    <a href="/">Главная</a>
+    <a href="/customers">Клиенты</a>
+    <a href="/proposals">КП</a>
+    <a href="/proposals/new">Быстрое КП</a>
+    <a href="/materials">Материалы</a>
+    <a href="/templates">Шаблоны</a>
+    <a href="/documents">Документы</a>
+  </nav>
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

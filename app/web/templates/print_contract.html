@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Договор</title>
+<style>
+body{font-family:DejaVu Sans,Arial} h1{font-size:18px} .row{margin:6px 0}
+.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:6px;margin-bottom:8px}
+.brand{font-weight:bold}
+</style></head>
+<body>
+<div class="header">
+  <div class="brand">VENT•PRO — HVAC Solutions</div>
+  <div>Договор № {{ ctx.CONTRACT_NO }} от {{ ctx.CONTRACT_DATE }}</div>
+</div>
+<div class="row"><b>Заказчик:</b> {{ ctx.CUSTOMER_FIO }}</div>
+<div class="row"><b>Исполнитель:</b> {{ ctx.EXECUTOR_FIO }}</div>
+<div class="row"><b>Объект:</b> {{ ctx.OBJECT_ADDR }}</div>
+<hr>
+<p>Стоимость оборудования и материалов: <b>{{ ctx.SUM_EQUIP }}</b> руб.</p>
+<p>Стоимость монтажных работ: <b>{{ ctx.SUM_WORK }}</b> руб.</p>
+<p>Итого: <b>{{ ctx.SUM_TOTAL }}</b> руб.</p>
+<p>Предоплата: <b>{{ ctx.PREPAYMENT_PCT or "по договоренности" }}</b>%</p>
+<p>Срок поставки: <b>{{ ctx.DELIVERY_DAYS or "-" }}</b> дней, срок монтажа: <b>{{ ctx.INSTALL_DAYS or "-" }}</b> дней, гарантия: <b>{{ ctx.WARRANTY_MONTHS or "-" }}</b> мес.</p>
+<ol>
+  <li>Этап 1: {{ ctx.STAGE1 }} руб.</li>
+  <li>Этап 2: {{ ctx.STAGE2 }} руб.</li>
+  <li>Этап 3: {{ ctx.STAGE3 }} руб.</li>
+</ol>
+<p>Срок действия КП: {{ ctx.KP_VALID_DAYS or "-" }} дней.</p>
+</body></html>

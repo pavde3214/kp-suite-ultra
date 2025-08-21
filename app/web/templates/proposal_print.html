@@ -1,0 +1,89 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{{ p.number }} — КП</title>
+<style>
+body{font-family:DejaVu Sans,Arial; margin:20px; color:#111}
+.header{display:flex;align-items:center;justify-content:space-between;border-block-end:2px solid #333;padding-block-end:8px;margin-block-end:16px}
+.brand{font-weight:bold;font-size:18px}
+.kpno{font-size:14px;text-align:end}
+.addr{color:#444}
+h2{margin:6px 0 12px}
+table{border-collapse:collapse;inline-size:100%;font-size:12px}
+th,td{border:1px solid #666;padding:6px;vertical-align:top}
+.section{margin-block-start:14px}
+.total{font-weight:bold;background:#f5f5f5}
+.stage{border:1px solid #666;padding:8px;margin-block-start:12px}
+.small{font-size:11px;color:#444}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand">{{ p.header_html | safe }}</div>
+  <div class="kpno">
+    КП № {{ p.number }}<br>
+    Клиент: {{ (p.customer.fullname if p.customer else '') }}<br>
+    Контакты: {{ ((p.customer.phone if p.customer else '') or '') }} {{ ((p.customer.email if p.customer else '') or '') }}
+  </div>
+</div>
+<div class="addr"><b>Объект:</b> {{ p.site_address or (p.customer.address_object if p.customer else '') }}</div>
+
+<h2>{{ p.title }}</h2>
+
+{% set equip_total = 0 %}
+{% set labor_total = 0 %}
+
+{% for s in sections %}
+  <div class="section">
+    <h3>Раздел № {{ s.position }}. {{ s.title }}</h3>
+    <table>
+      <tr>
+        <th>Поз.</th><th>Наименование и тех. характеристика</th>
+        <th>Тип, марка, обозначение</th><th>Ед.</th><th>Кол-во</th>
+        <th>Стоимость оборудования и материалов (на ед.)</th>
+        <th>Оборудование и материалы (всего)</th>
+        <th>Стоимость монтажных работ (на ед.)</th>
+        <th>Монтажные работы (всего)</th>
+        <th>Итого в рублях</th>
+      </tr>
+      {% for i in items if i.section_id == s.id %}
+        {% set m_total = (i.qty or 0)*(i.price or 0) %}
+        {% set l_total = (i.qty or 0)*(i.price_labor or 0) %}
+        {% set row_total = m_total + l_total %}
+        {% set equip_total = equip_total + m_total %}
+        {% set labor_total = labor_total + l_total %}
+        <tr>
+          <td>{{ i.position or "" }}</td>
+          <td>{{ i.name }}</td>
+          <td>{{ i.note or "" }}</td>
+          <td>{{ i.unit }}</td>
+          <td>{{ i.qty }}</td>
+          <td>{{ "%.0f" % (i.price or 0) }}</td>
+          <td>{{ "%.0f" % m_total }}</td>
+          <td>{{ "%.0f" % (i.price_labor or 0) }}</td>
+          <td>{{ "%.0f" % l_total }}</td>
+          <td>{{ "%.0f" % row_total }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endfor %}
+
+{% set grand = equip_total + labor_total %}
+
+<table style="margin-block-start:10px">
+  <tr class="total">
+    <td colspan="6">Всего по предложению:</td>
+    <td>{{ "%.0f" % equip_total }}</td>
+    <td></td>
+    <td>{{ "%.0f" % labor_total }}</td>
+    <td>{{ "%.0f" % grand }}</td>
+  </tr>
+</table>
+
+<div class="stage">
+  <b>Этапы оплаты (пример 100/70/30):</b>
+  <div>1) 100% оборудования и материалов: <b>{{ "%.0f" % equip_total }}</b> руб.</div>
+  <div>2) 70% монтажных работ: <b>{{ "%.0f" % (labor_total*0.7) }}</b> руб.</div>
+  <div>3) 30% монтажных работ: <b>{{ "%.0f" % (labor_total*0.3) }}</b> руб.</div>
+  <div class="small">* Срок действия предложения: 14 календарных дней. Сроки поставки/монтажа и гарантия указываются в договоре.</div>
+</div>
+</body></html>

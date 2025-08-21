@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Материалы</h2>
+<form class="card" method="post" action="/materials/create">
+  <input name="name" placeholder="Наименование" required>
+  <input name="model" placeholder="Модель">
+  <input name="unit" placeholder="Ед." value="шт">
+  <input name="price_material" placeholder="Цена (мат.)" value="0">
+  <input name="price_labor" placeholder="Цена (монтаж)" value="0">
+  <button>Добавить</button>
+</form>
+<form class="card" method="post" action="/materials/import" enctype="multipart/form-data">
+  <label>Импорт CSV:</label>
+  <input type="file" name="file" required>
+  <button>Импортировать</button>
+</form>
+<form class="card" method="get" action="/materials">
+  <input name="q" placeholder="Поиск..." value="{{ q or '' }}">
+  <button>Искать</button>
+</form>
+{% endblock %}

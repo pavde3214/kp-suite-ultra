@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Коммерческие предложения</h2>
+<p><a class="btn" href="/proposals/new">Быстрое создание КП</a></p>
+<table>
+  <tr><th>Дата</th><th>Номер</th><th>Клиент</th><th>Адрес</th><th>Открыть</th></tr>
+  {% for p in proposals %}
+  <tr>
+    <td>{{ p.created_at.strftime('%Y-%m-%d') if p.created_at else '' }}</td>
+    <td>{{ p.number }}</td>
+    <td>{{ p.customer.fullname }}</td>
+    <td>{{ p.site_address or p.customer.address_object or '' }}</td>
+    <td><a href="/proposals/{{ p.id }}/edit">Редактировать</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

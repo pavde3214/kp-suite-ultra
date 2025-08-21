@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Клиенты</h2>
+<form class="card" method="post" action="/customers/create">
+  <div class="grid2">
+    <label>ФИО:</label><input name="fullname" placeholder="ФИО клиента" required>
+    <label>Паспорт:</label><input name="passport" placeholder="Паспортные данные">
+    <label>Телефон:</label><input name="phone" placeholder="+7 ...">
+    <label>Email:</label><input name="email" placeholder="mail@example.com">
+    <label>Адрес регистрации:</label><input name="address" placeholder="Город, улица ...">
+    <label>Адрес объекта:</label><input name="address_object" placeholder="Адрес объекта (для КП/Договора)">
+  </div>
+  <button>Добавить клиента</button>
+</form>
+
+<table>
+  <tr><th>ID</th><th>ФИО</th><th>Адрес объекта</th><th>Действия</th></tr>
+  {% for c in customers %}
+  <tr>
+    <td>{{ c.id }}</td>
+    <td><a href="/customers/card/{{ c.id }}">{{ c.fullname }}</a></td>
+    <td>{{ c.address_object or "" }}</td>
+    <td>
+      <a class="btn" href="/proposals/create?customer_id={{ c.id }}">Создать КП</a>
+      <a class="btn" href="/contract/editor?customer_id={{ c.id }}">Редактор договора</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

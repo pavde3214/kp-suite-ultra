@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Карточка клиента #{{ c.id }}</h2>
+<div class="grid">
+  <form class="card" method="post" action="/customers/{{ c.id }}/save">
+    <h3>Основные данные</h3>
+    <div class="grid2">
+      <label>ФИО/Наименование:</label><input name="fullname" value="{{ c.fullname or '' }}">
+      <label>Паспорт:</label><input name="passport" value="{{ c.passport or '' }}">
+      <label>Телефон:</label><input name="phone" value="{{ c.phone or '' }}">
+      <label>Email:</label><input name="email" value="{{ c.email or '' }}">
+      <label>Адрес регистрации:</label><input name="address" value="{{ c.address or '' }}">
+      <label>Адрес объекта:</label><input name="address_object" value="{{ c.address_object or '' }}">
+    </div>
+
+    <h3>Реквизиты (для договора)</h3>
+    <div class="grid2">
+      <label>Компания (если юр. лицо):</label><input name="company_name" value="{{ c.company_name or '' }}">
+      <label>Должность подписанта:</label><input name="position" value="{{ c.position or '' }}">
+      <label>Контактное лицо:</label><input name="contact_person" value="{{ c.contact_person or '' }}">
+      <label>ИНН / КПП:</label>
+      <div style="display:flex; gap:8px">
+        <input name="inn" value="{{ c.inn or '' }}" placeholder="ИНН" style="width:200px">
+        <input name="kpp" value="{{ c.kpp or '' }}" placeholder="КПП" style="width:200px">
+      </div>
+      <label>ОГРН/ОГРНИП:</label><input name="ogrn" value="{{ c.ogrn or '' }}">
+      <label>Банк:</label><input name="bank_name" value="{{ c.bank_name or '' }}">
+      <label>БИК / р/с / к/с:</label>
+      <div style="display:flex; gap:8px">
+        <input name="bank_bik" value="{{ c.bank_bik or '' }}" placeholder="БИК" style="width:180px">
+        <input name="bank_acc" value="{{ c.bank_acc or '' }}" placeholder="р/с" style="width:280px">
+        <input name="bank_corr" value="{{ c.bank_corr or '' }}" placeholder="к/с" style="width:280px">
+      </div>
+    </div>
+
+    <div style="margin-top:8px">
+      <button>Сохранить</button>
+      <a class="btn" href="/proposals/create?customer_id={{ c.id }}">Создать КП</a>
+      <a class="btn" href="/proposals/new?customer_id={{ c.id }}">Быстрое КП</a>
+      <a class="btn" href="/contract/editor?customer_id={{ c.id }}{% if latest_kp %}&kp_id={{ latest_kp.id }}{% endif %}">Редактор договора</a>
+      <a class="btn" href="/contracts/create-all?customer_id={{ c.id }}{% if latest_kp %}&kp_id={{ latest_kp.id }}{% endif %}" target="_blank">Сформировать пакет (Договор + Прил.1–6)</a>
+    </div>
+  </form>
+
+  <div class="card">
+    <h3>КП клиента</h3>
+    <ul>
+      {% for p in proposals %}
+        <li><a href="/proposals/{{ p.id }}/edit">{{ p.created_at.strftime('%Y-%m-%d') if p.created_at else '' }} — {{ p.number }} — {{ p.title }}</a></li>
+      {% else %}
+        <li>КП пока нет</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

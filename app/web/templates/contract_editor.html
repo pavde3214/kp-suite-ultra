@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="toolbar">
+  <div class="left"><b>Редактор договора</b></div>
+  <div class="right">
+    <button onclick="saveCtx()">Сохранить параметры</button>
+    <a class="btn" target="_blank" id="btn-docx">Сформировать DOCX</a>
+  </div>
+</div>
+<div class="grid2 card">
+  <label>Дата договора:</label><input id="CONTRACT_DATE" value="{{ ctx.CONTRACT_DATE }}">
+  <label>Срок поставки (дн.):</label><input id="DELIVERY_DAYS" value="{{ ctx.DELIVERY_DAYS or '' }}">
+  <label>Срок монтажа (дн.):</label><input id="INSTALL_DAYS" value="{{ ctx.INSTALL_DAYS or '' }}">
+  <label>Гарантия (мес.):</label><input id="WARRANTY_MONTHS" value="{{ ctx.WARRANTY_MONTHS or '' }}">
+  <label>Срок действия КП (дн.):</label><input id="KP_VALID_DAYS" value="{{ ctx.KP_VALID_DAYS or '' }}">
+  <label>Предоплата (%):</label><input id="PREPAYMENT_PCT" value="{{ ctx.PREPAYMENT_PCT or '' }}">
+</div>
+<iframe id="preview" style="inline-size:100%;block-size:70vh;border:1px solid #334155"></iframe>
+<script>
+const params = new URLSearchParams(window.location.search);
+const customer_id = params.get('customer_id');
+const estimate_id = params.get('estimate_id');
+const kp_id = params.get('kp_id');
+
+function reloadPreview(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const customer_id = urlParams.get('customer_id');
+  const estimate_id = urlParams.get('estimate_id');
+  const kp_id = urlParams.get('kp_id');
+
+  const q = new URLSearchParams();
+  if (customer_id) q.set('customer_id', customer_id);
+  if (estimate_id && estimate_id !== 'null' && estimate_id !== '') q.set('estimate_id', estimate_id);
+  if (kp_id && kp_id !== 'null' && kp_id !== '') q.set('kp_id', kp_id);
+
+  const fields = ['CONTRACT_DATE','DELIVERY_DAYS','INSTALL_DAYS','WARRANTY_MONTHS','KP_VALID_DAYS','PREPAYMENT_PCT'];
+  for (const f of fields){
+    const v = document.getElementById(f)?.value ?? '';
+    if (v !== '') q.set(f, v);
+  }
+  document.getElementById('preview').src = '/print/contract?' + q.toString();
+  document.getElementById('btn-docx').href = '/contract/docx?' + q.toString();
+}
+  document.getElementById('preview').src = '/print/contract?' + q.toString();
+  document.getElementById('btn-docx').href = '/contract/docx?' + q.toString();
+};
+  document.getElementById('preview').src = '/print/contract?'+q.toString();
+  document.getElementById('btn-docx').href = '/contract/docx?'+q.toString();
+
+reloadPreview();
+
+async function saveCtx(){
+  const overrides = {
+    CONTRACT_DATE: document.getElementById('CONTRACT_DATE').value,
+    DELIVERY_DAYS: document.getElementById('DELIVERY_DAYS').value,
+    INSTALL_DAYS: document.getElementById('INSTALL_DAYS').value,
+    WARRANTY_MONTHS: document.getElementById('WARRANTY_MONTHS').value,
+    KP_VALID_DAYS: document.getElementById('KP_VALID_DAYS').value,
+    PREPAYMENT_PCT: document.getElementById('PREPAYMENT_PCT').value,
+  };
+  await fetch('/api/v1/contracts/save-context?customer_id='+customer_id+'&estimate_id='+ (estimate_id||'') +'&kp_id='+ (kp_id||''), {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({overrides})
+  });
+  alert('Сохранено'); reloadPreview();
+}
+</script>
+{% endblock %}

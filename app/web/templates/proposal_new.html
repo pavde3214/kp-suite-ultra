@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Быстрое создание КП</h2>
+<div class="card">
+  <form method="post" action="/proposals/new">
+    <h3>Выбор клиента</h3>
+    <p>Если клиента ещё нет — заполните форму ниже, и он будет создан автоматически.</p>
+    <div class="grid2">
+      <label>ID существующего клиента:</label><input name="customer_id" placeholder="(опционально)">
+      <label>ФИО:</label><input name="fullname" placeholder="Напр.: Иванов Иван Иванович">
+      <label>Телефон:</label><input name="phone" placeholder="+7 ...">
+      <label>Email:</label><input name="email" placeholder="mail@example.com">
+      <label>Адрес регистрации:</label><input name="address" placeholder="Город, улица ...">
+      <label>Адрес объекта:</label><input name="address_object" placeholder="Город, улица ...">
+    </div>
+    <h3>Параметры КП</h3>
+    <div class="grid2">
+      <label>Название КП:</label><input name="title" value="Коммерческое предложение">
+      <label>Адрес объекта (если нужно переопределить):</label><input name="site_address">
+      <label>Шапка (HTML):</label><textarea name="header_html" rows="3"><b>VENT•PRO HVAC</b></textarea>
+    </div>
+    <button>Создать КП</button>
+  </form>
+</div>
+{% endblock %}
