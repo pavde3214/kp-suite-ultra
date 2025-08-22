@@ -377,15 +377,32 @@ async def api_create_section(payload: dict = Body(...)):
     if not title:
         raise HTTPException(422, "Title is required")
     db: Session = SessionLocal()
-    last_pos = db.execute(
-        select(func.coalesce(func.max(ProposalSection.position), 0)).where(ProposalSection.proposal_id == pid)
+    count = db.execute(
+        select(func.count(ProposalSection.id)).where(ProposalSection.proposal_id == pid)
     ).scalar_one()
-    sec = ProposalSection(proposal_id=pid, title=title, position=int(last_pos)+1)
+    sec = ProposalSection(proposal_id=pid, title=title, position=str(count+1))
     db.add(sec); db.commit(); db.refresh(sec); db.close()
     return JSONResponse({"id": sec.id, "position": sec.position, "title": sec.title})
 
 
 @app.post("/api/v1/proposals/items")
+def _next_position_for_section(db: Session, proposal_id: int, section_id: int) -> str:
+    sec = db.get(ProposalSection, section_id)
+    if not sec:
+        return ""
+    try:
+        sec_num = int((sec.position or "").split(".")[0])
+    except Exception:
+        sections = db.execute(
+            select(ProposalSection).where(ProposalSection.proposal_id == proposal_id)
+        ).scalars().all()
+        sec_num = sections.index(sec) + 1
+    count = db.execute(
+        select(func.count(ProposalItem.id)).where(ProposalItem.section_id == section_id)
+    ).scalar_one()
+    return f"{sec_num}.{count+1}"
+
+
 async def api_create_item(payload: dict = Body(...)):
     pid = int(payload.get("proposal_id"))
     sec_id = int(payload.get("section_id"))
@@ -399,11 +416,9 @@ async def api_create_item(payload: dict = Body(...)):
     price_labor = float(payload.get("price_labor") or 0)
 
     db: Session = SessionLocal()
-    last_pos = db.execute(
-        select(func.coalesce(func.max(ProposalItem.position), 0)).where(ProposalItem.section_id == sec_id)
-    ).scalar_one()
+    pos = _next_position_for_section(db, pid, sec_id)
     item = ProposalItem(
-        proposal_id=pid, section_id=sec_id, position=int(last_pos)+1,
+        proposal_id=pid, section_id=sec_id, position=pos,
         name=name, note=note, unit=unit, qty=qty, price=price, price_labor=price_labor
     )
     db.add(item); db.commit(); db.refresh(item); db.close()
