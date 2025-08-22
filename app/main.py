@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Request, UploadFile, File, Form, Depends, HTTPException, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse, FileResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import Session, joinedload
 from xhtml2pdf import pisa
@@ -160,22 +161,32 @@ def create_proposal_page(customer_id: int):
 @app.get("/proposals/{pid}/edit", response_class=HTMLResponse)
 def edit_proposal(request: Request, pid: int):
     db: Session = SessionLocal()
-    p = db.get(Proposal, pid)
-    sections = db.execute(select(ProposalSection).where(ProposalSection.proposal_id==pid).order_by(ProposalSection.position)).scalars().all()
-    items = db.execute(select(ProposalItem).where(ProposalItem.proposal_id==pid)).scalars().all()
-    db.close()
-    return templates.TemplateResponse("proposal_edit.html", {"request": request, "p": p, "sections": sections, "items": items})
+    try:
+        p = db.get(Proposal, pid)
+        if not p:
+            raise HTTPException(404, "Proposal not found")
+        sections = db.execute(select(ProposalSection).where(ProposalSection.proposal_id==pid).order_by(ProposalSection.position)).scalars().all()
+        items = db.execute(select(ProposalItem).where(ProposalItem.proposal_id==pid)).scalars().all()
+        return templates.TemplateResponse("proposal_edit.html", {"request": request, "p": p, "sections": sections, "items": items})
+    finally:
+        db.close()
 
 @app.post("/proposals/{pid}/save")
 async def save_proposal(pid: int, request: Request):
     data = await request.json()
     db: Session = SessionLocal()
-    p = db.get(Proposal, pid)
-    p.title = data.get("title", p.title)
-    p.site_address = data.get("site_address", p.site_address)
-    p.header_html = data.get("header_html", p.header_html)
-    db.add(p); db.commit(); db.close()
-    return {"status":"ok"}
+    try:
+        p = db.get(Proposal, pid)
+        if not p:
+            raise HTTPException(404, "Proposal not found")
+        p.title = data.get("title", p.title)
+        p.site_address = data.get("site_address", p.site_address)
+        p.header_html = data.get("header_html", p.header_html)
+        db.add(p)
+        db.commit()
+        return {"status":"ok"}
+    finally:
+        db.close()
 
 @app.get("/proposals/{pid}/print", response_class=HTMLResponse)
 def print_proposal(request: Request, pid: int):
@@ -192,19 +203,13 @@ def print_proposal(request: Request, pid: int):
     items = db.execute(
         select(ProposalItem).where(ProposalItem.proposal_id == pid)
     ).scalars().all()
+    # Ensure customer data is loaded before closing the session
     _ = p.customer.fullname if p.customer else None
-    db.close()
-    return templates.TemplateResponse("proposal_print.html", {"request": request, "p": p, "sections": sections, "items": items})
-    db: Session = SessionLocal()
-    p = db.get(Proposal, pid)
-    sections = db.execute(select(ProposalSection).where(ProposalSection.proposal_id==pid).order_by(ProposalSection.position)).scalars().all()
-    items = db.execute(select(ProposalItem).where(ProposalItem.proposal_id==pid)).scalars().all()
     db.close()
     return templates.TemplateResponse("proposal_print.html", {"request": request, "p": p, "sections": sections, "items": items})
 
 @app.get("/proposals/{pid}/pdf")
 def pdf_proposal(request: Request, pid: int):
-    from xhtml2pdf import pisa
     import io
     db: Session = SessionLocal()
     p = db.execute(
@@ -219,6 +224,7 @@ def pdf_proposal(request: Request, pid: int):
     items = db.execute(
         select(ProposalItem).where(ProposalItem.proposal_id == pid)
     ).scalars().all()
+    # Ensure customer data is loaded before closing the session
     _ = p.customer.fullname if p.customer else None
     db.close()
 
@@ -230,15 +236,6 @@ def pdf_proposal(request: Request, pid: int):
     buf.seek(0)
     headers = {"Content-Disposition": f'inline; filename="kp_{pid}.pdf"'}
     return StreamingResponse(buf, media_type="application/pdf", headers=headers)
-    req = Request(scope={"type": "http"})
-    html_resp = print_proposal(req, pid=pid)
-    from starlette.templating import _TemplateResponse
-    if isinstance(html_resp, _TemplateResponse):
-        html_resp.render(); html = html_resp.body.decode("utf-8")
-    else: html = str(html_resp)
-    out = DOCS_DIR / f"KP_{pid}.pdf"
-    buf = BytesIO(); pisa.CreatePDF(src=html, dest=buf); out.write_bytes(buf.getvalue())
-    return FileResponse(str(out), filename=out.name, media_type="application/pdf")
 
 # ---------- CONTRACT EDITOR & PRINT ----------
 @app.get("/contract/editor", response_class=HTMLResponse)
@@ -280,14 +277,17 @@ def print_contract(request: Request, customer_id: int, estimate_id: int | None =
 @app.get("/contract/docx")
 def contract_docx(customer_id: int, estimate_id: int | None = None, kp_id: int | None = None, **kwargs):
     db: Session = SessionLocal()
-    from app.api.routers.contracts import build_ctx
-    number, ctx, _, _ = build_ctx(db, customer_id, estimate_id, kp_id, kwargs)
-    tpl = TEMPLATES_DIR / "Договор.docx"
-    if not tpl.is_file():
-        raise HTTPException(400, "Нет шаблона Договор.docx")
-    out = DOCS_DIR / f"Договор_{number}.docx"
-    render_docx(str(tpl), str(out), ctx)
-    return FileResponse(str(out), filename=out.name, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    try:
+        from app.api.routers.contracts import build_ctx
+        number, ctx, _, _ = build_ctx(db, customer_id, estimate_id, kp_id, kwargs)
+        tpl = TEMPLATES_DIR / "Договор.docx"
+        if not tpl.is_file():
+            raise HTTPException(400, "Нет шаблона Договор.docx")
+        out = DOCS_DIR / f"Договор_{number}.docx"
+        render_docx(str(tpl), str(out), ctx)
+        return FileResponse(str(out), filename=out.name, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    finally:
+        db.close()
 
 # ---------- MATERIALS UI ----------
 @app.get("/materials", response_class=HTMLResponse)
