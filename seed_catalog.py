@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from app.db import SessionLocal
+from app.db.session import SessionLocal
 from app.models import Material
 
 items = [
