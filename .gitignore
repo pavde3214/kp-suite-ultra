@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+*.egg-info/
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Database (comment out if you want to commit DB)
+*.db
+*.sqlite3
+
+# Environment files
+.env
+.env.*
+!env.example
+
+# Build artifacts
+dist/
+build/
+*.bak
+
+# Temporary files
+uploads/
+tmp/
+temp/
+*.pdf
+
+# Windows
+*.cmd
+*.bat
