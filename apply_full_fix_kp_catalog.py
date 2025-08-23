@@ -160,10 +160,10 @@ def fix_main_py(_s: str) -> str:
             if not title:
                 raise HTTPException(422, "Title is required")
             db: Session = SessionLocal()
-            last_pos = db.execute(
-                select(func.coalesce(func.max(ProposalSection.position), 0)).where(ProposalSection.proposal_id == pid)
+            count = db.execute(
+                select(func.count(ProposalSection.id)).where(ProposalSection.proposal_id == pid)
             ).scalar_one()
-            sec = ProposalSection(proposal_id=pid, title=title, position=int(last_pos)+1)
+            sec = ProposalSection(proposal_id=pid, title=title, position=str(count+1))
             db.add(sec); db.commit(); db.refresh(sec); db.close()
             return JSONResponse({"id": sec.id, "position": sec.position, "title": sec.title})
         """)
@@ -186,11 +186,23 @@ def fix_main_py(_s: str) -> str:
             price_labor = float(payload.get("price_labor") or 0)
 
             db: Session = SessionLocal()
-            last_pos = db.execute(
-                select(func.coalesce(func.max(ProposalItem.position), 0)).where(ProposalItem.section_id == sec_id)
+            sec = db.get(ProposalSection, sec_id)
+            if sec:
+                try:
+                    sec_num = int((sec.position or "").split(".")[0])
+                except Exception:
+                    sections = db.execute(
+                        select(ProposalSection).where(ProposalSection.proposal_id == pid)
+                    ).scalars().all()
+                    sec_num = sections.index(sec) + 1
+            else:
+                sec_num = 0
+            count = db.execute(
+                select(func.count(ProposalItem.id)).where(ProposalItem.section_id == sec_id)
             ).scalar_one()
+            pos = f"{sec_num}.{count+1}"
             item = ProposalItem(
-                proposal_id=pid, section_id=sec_id, position=int(last_pos)+1,
+                proposal_id=pid, section_id=sec_id, position=pos,
                 name=name, note=note, unit=unit, qty=qty, price=price, price_labor=price_labor
             )
             db.add(item); db.commit(); db.refresh(item); db.close()
